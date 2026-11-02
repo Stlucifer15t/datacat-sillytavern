@@ -8,6 +8,8 @@ This is a port of the
 [Datacat Browser for Lumiverse](https://github.com/datacat-run/datacat-lumiverse)
 to SillyTavern's third-party extension API.
 
+Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
+
 ## Features
 
 - Fresh feed, full catalogue search, sorting and pagination.

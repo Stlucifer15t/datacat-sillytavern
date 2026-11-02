@@ -7,7 +7,7 @@
   "css": "style.css",
   "author": "Datacat",
   "version": "1.0.0",
-  "homePage": "https://github.com/datacat-run/datacat-sillytavern",
+  "homePage": "https://github.com/Stlucifer15t/datacat-sillytavern",
   "auto_update": false,
   "hooks": {
     "activate": "init",
