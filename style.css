@@ -1,0 +1,262 @@
+/*
+ * SillyTavern chrome for the Datacat browser.
+ * The catalogue UI ships its own stylesheet from src/ui.js; this file only
+ * styles the host shell, modal frame and settings panel.
+ */
+
+#datacat-st-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: none;
+  flex-direction: column;
+  background: #100c17;
+  color: #fff8e8;
+}
+
+#datacat-st-shell[data-open="true"] {
+  display: flex;
+}
+
+body.dc-st-open {
+  overflow: hidden !important;
+}
+
+#datacat-st-shell .dc-st-header {
+  display: none !important;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #17101f;
+  border-bottom: 1px solid rgba(246, 200, 76, 0.22);
+  color: #fff8e8;
+}
+
+#datacat-st-shell .dc-st-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+#datacat-st-shell .dc-st-title h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#datacat-st-shell .dc-st-cat {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  color: #f6c84c;
+}
+
+#datacat-st-shell .dc-st-cat svg {
+  width: 100%;
+  height: 100%;
+}
+
+#datacat-st-shell .dc-st-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(246, 200, 76, 0.25);
+  border-radius: 10px;
+  background: rgba(246, 200, 76, 0.08);
+  color: #fff8e8;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#datacat-st-shell .dc-st-close:hover,
+#datacat-st-shell .dc-st-close:focus-visible {
+  background: rgba(246, 200, 76, 0.18);
+  outline: none;
+}
+
+#datacat-st-shell .dc-st-content {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The ported UI tries to take over the Lumiverse drawer chrome. Keep the
+   panel frame intact and let the content fill the remaining space instead. */
+#datacat-st-shell .dcv1-host {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+#datacat-st-shell .dcv1-lumiverse-panel-header {
+  display: none !important;
+}
+
+#datacat-st-shell .dcv1-lumiverse-panel-content {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#datacat-st-shell .dc-st-tab-root {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/* Modal frame used by ctx.ui.showModal                                */
+/* ------------------------------------------------------------------ */
+
+.dc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8, 5, 12, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.dc-modal-container {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, calc(100vw - 24px));
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  border: 1px solid rgba(246, 200, 76, 0.22);
+  border-radius: 16px;
+  background: #191221;
+  color: #fff8e8;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.dc-modal-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(246, 200, 76, 0.16);
+  background: #17101f;
+}
+
+.dc-modal-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dc-modal-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(246, 200, 76, 0.22);
+  border-radius: 9px;
+  background: transparent;
+  color: #fff8e8;
+  cursor: pointer;
+}
+
+.dc-modal-close:hover,
+.dc-modal-close:focus-visible {
+  background: rgba(246, 200, 76, 0.14);
+  outline: none;
+}
+
+.dc-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+  background: #191221;
+  color: #fff8e8;
+}
+
+.dc-modal-body .dcv1-empty {
+  color: #b9adbf;
+}
+
+/* ------------------------------------------------------------------ */
+/* Wand menu + settings                                                */
+/* ------------------------------------------------------------------ */
+
+.dc-wand-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  color: #f6c84c;
+}
+
+.dc-wand-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.datacat-settings .dc-settings-copy {
+  margin-bottom: 10px;
+  color: var(--SmartThemeEmColor);
+  font-size: 0.92em;
+  line-height: 1.4;
+}
+
+.datacat-settings .dc-settings-label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.datacat-settings .dc-settings-hint {
+  margin-top: 4px;
+  color: var(--SmartThemeEmColor);
+  font-size: 0.85em;
+  line-height: 1.35;
+}
+
+.datacat-settings .dc-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.datacat-settings .menu_button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.datacat-settings .dc-settings-button-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+.datacat-settings .dc-settings-button-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.datacat-settings .dc-settings-status {
+  margin-top: 10px;
+  color: var(--SmartThemeEmColor);
+  font-size: 0.85em;
+}

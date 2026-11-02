@@ -1,0 +1,11 @@
+{
+  "name": "datacat-sillytavern",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Datacat catalogue browser for SillyTavern",
+  "scripts": {
+    "dev": "node dev/server.mjs",
+    "check": "node --check index.js && node --check src/api.js && node --check src/host.js && node --check src/ui.js && node --check src/uuidv7.js"
+  }
+}
