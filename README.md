@@ -1,8 +1,9 @@
-# Datacat Browser for SillyTavern
+# Datacat & JannyAI Browser for SillyTavern
 
-Bring the [Datacat](https://datacat.run) character catalogue into SillyTavern.
-Browse Fresh, search the full catalogue, explore tags and creators, import a
-character in one click, and open a chat without leaving the app.
+Bring the [Datacat](https://datacat.run) and [JannyAI](https://jannyai.com)
+character catalogues into SillyTavern. Browse fresh discoveries, search the full
+Datacat catalogue, explore JannyAI's public index, import a character, and open
+a chat without leaving the app.
 
 This is a port of the
 [Datacat Browser for Lumiverse](https://github.com/datacat-run/datacat-lumiverse)
@@ -20,6 +21,9 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 - Datacat account linking (anonymous or logged-in) and community actions
   (kudos, comments) from the wand menu while chatting.
 - Hosted Datacat security check for protected card and image transfers.
+- **Source switch** between Datacat and JannyAI in the same browser overlay.
+- JannyAI search, tags, sorting and detail cards, with an “Open on JannyAI”
+  shortcut and PNG-card import.
 
 ## Requirements
 
@@ -35,9 +39,10 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 
 1. Open SillyTavern → **Extensions** → **Install extension**.
 2. Paste the repository URL of this project.
-3. Enable **Datacat Browser** if it is not enabled automatically.
-4. Open **Datacat** from the wand menu. A shared Client ID is built in; set
-   your own in Extensions settings only if you want separate rate limits.
+3. Enable **Datacat & JannyAI** if it is not enabled automatically.
+4. Open **Datacat** or **JannyAI** from the wand menu. A shared Datacat
+   Client ID is built in; set your own in Extensions settings only if you want
+   separate rate limits.
 
 ### Manually
 
@@ -90,6 +95,26 @@ requested route — check the API Access page for the pending scope approval.
 - **Wand menu → Kudos / Comment** works while a Datacat-linked character is
   selected; it opens the Datacat account flow if needed.
 
+### JannyAI source
+
+JannyAI has no official public API and its card download endpoint is behind
+Cloudflare, so the integration is split in two:
+
+- **Browse/search** uses JannyAI's public Meilisearch index: name, description,
+  tags, token counts, NSFW filter, sorting and avatars.
+- **Import** is a manual PNG hand-off: click **Open** on a card, use JannyAI's
+  Download button, then click **Import PNG** in the extension and choose the
+  downloaded card. The extension reads the V2 card embedded in the PNG and
+  imports it through SillyTavern, attaching `extensions.jannyai` metadata.
+
+The extension does not proxy or scrape JannyAI pages. If the public search key
+rotates, update the extension or paste a new key under
+**Extensions → Advanced → JannyAI search key**; the UI reports key failures.
+
+JannyAI is an independent mirror of JanitorAI content. Respect the original
+creators and JannyAI's terms; the extension only searches its public index and
+opens normal JannyAI pages for downloads.
+
 ### Android / TauriTavern
 
 TauriTavern runs SillyTavern in a Tauri WebView and often sends
@@ -117,11 +142,14 @@ Imported characters carry this metadata inside the card:
 
 The "Added" badges and the Imports tab are built by scanning your SillyTavern
 character library for that metadata; nothing is written to Datacat when you
-scan.
+scan. JannyAI imports use `extensions.jannyai` (`id`, `name`, `pageUrl`,
+`importedAt`, `source`).
 
 ## Privacy and storage
 
 - Discovery requests are anonymous unless you link a Datacat account.
+- JannyAI searches are sent directly from your browser to
+  `search.jannyai.com`; JannyAI card pages open in your normal browser.
 - Account tokens and the short-lived verification lease are stored in
   SillyTavern's `extension_settings` (server-side `settings.json`), never in
   `localStorage` or page cookies.
@@ -139,6 +167,7 @@ port replaces that host with two browser modules:
 | ------------- | --------------------------------------------------------------------------- |
 | `src/api.js`  | Allowlisted Datacat Client API calls, client headers, token/lease exchanges |
 | `src/host.js` | SillyTavern adapter: full-screen drawer, modals, toasts, character reads     |
+| `src/janny.js`| JannyAI search panel and PNG-card import                                    |
 | `src/ui.js`   | The catalogue UI, ported from the Lumiverse extension with minimal changes   |
 
 Only these call sites differ from the original:

@@ -7,16 +7,18 @@ import {
 } from "../../../../script.js";
 import { createDatacatClient } from "./src/api.js";
 import { createHost } from "./src/host.js";
+import { createJannyView } from "./src/janny.js";
 import { setup } from "./src/ui.js";
 
 const MODULE = "datacat";
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const DEFAULT_CLIENT_ID = "dca_kz-pccgdi04zmvswkuwtzejk";
 const DEFAULTS = {
   clientId: DEFAULT_CLIENT_ID,
   clientName: "SillyTavern",
   installationId: "",
   accessToken: "",
+  jannySearchToken: "",
   verificationLease: null,
   pending: {},
 };
@@ -29,9 +31,16 @@ const CAT_ICON = `
     <path d="M9.4 16c1.7 1 3.5 1 5.2 0" fill="none" stroke="#17101f" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`;
 
+const JANNY_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="m12 2.6 2.7 5.7 6.2.8-4.5 4.3 1.2 6.2L12 16.6l-5.6 3 1.2-6.2L3.1 9.1l6.2-.8L12 2.6Z" fill="currentColor"/>
+  </svg>`;
+
 let host = null;
 let teardown = null;
 let settingsElement = null;
+let jannyView = null;
+let unregisterJanny = null;
 
 function getSettings() {
   const store = extension_settings[MODULE];
@@ -62,12 +71,12 @@ function renderSettingsPanel() {
   container.innerHTML = `
     <div class="inline-drawer">
       <div class="inline-drawer-toggle inline-drawer-header">
-        <b>Datacat</b>
+        <b>Datacat / JannyAI</b>
         <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
       </div>
       <div class="inline-drawer-content">
         <div class="dc-settings-copy">
-          Browse the Datacat catalogue and import characters straight into SillyTavern.
+          Browse Datacat, or switch to JannyAI in the same browser overlay.
         </div>
         <label class="dc-settings-label" for="datacat-client-id">Datacat Client ID</label>
         <input id="datacat-client-id" class="text_pole" type="text" autocomplete="off" spellcheck="false">
@@ -76,10 +85,16 @@ function renderSettingsPanel() {
           <a href="https://datacat.run/creatortools/api-access" target="_blank" rel="noopener noreferrer">datacat.run → Creator Management → API Access</a>
           if you want your own rate limits.
         </div>
+        <details class="dc-settings-advanced">
+          <summary>Advanced</summary>
+          <label class="dc-settings-label" for="datacat-janny-token">JannyAI search key (optional)</label>
+          <input id="datacat-janny-token" class="text_pole" type="text" autocomplete="off" spellcheck="false">
+          <div class="dc-settings-hint">Leave empty to use the built-in public key. Update this if JannyAI rotates its search key.</div>
+        </details>
         <div class="dc-settings-actions">
           <div id="datacat-open" class="menu_button menu_button_icon">
             <span class="dc-settings-button-icon">${CAT_ICON}</span>
-            <span>Open Datacat</span>
+            <span>Open browser</span>
           </div>
           <div id="datacat-forget" class="menu_button">Forget local session</div>
         </div>
@@ -98,6 +113,14 @@ function renderSettingsPanel() {
     input.value = getSettings().clientId;
     saveSettings();
     updateSettingsStatus();
+  });
+
+  const tokenInput = container.querySelector("#datacat-janny-token");
+  tokenInput.value = settings.jannySearchToken || "";
+  tokenInput.addEventListener("change", () => {
+    getSettings().jannySearchToken = String(tokenInput.value || "").trim();
+    tokenInput.value = getSettings().jannySearchToken;
+    saveSettings();
   });
 
   container.querySelector("#datacat-open")?.addEventListener("click", () => host?.open());
@@ -124,25 +147,24 @@ function updateSettingsStatus(message) {
     }`;
 }
 
-function addWandButton() {
-  if (document.getElementById("datacat-wand-button")) return;
+function addWandButton({ id, label, icon, action }) {
+  if (document.getElementById(id)) return;
   const menu = document.getElementById("extensionsMenu");
   if (!menu) {
-    if (host) setTimeout(addWandButton, 500);
+    if (host) setTimeout(() => addWandButton({ id, label, icon, action }), 500);
     return;
   }
   const item = document.createElement("div");
-  item.id = "datacat-wand-button";
+  item.id = id;
   item.className = "list-group-item flex-container flexGap5 interactable";
   item.tabIndex = 0;
-  item.title = "Browse Datacat";
-  item.innerHTML = `<div class="dc-wand-icon" aria-hidden="true">${CAT_ICON}</div><span>Datacat</span>`;
-  const activate = () => host?.open();
-  item.addEventListener("click", activate);
+  item.title = `Open ${label}`;
+  item.innerHTML = `<div class="dc-wand-icon" aria-hidden="true">${icon}</div><span>${label}</span>`;
+  item.addEventListener("click", action);
   item.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      activate();
+      action();
     }
   });
   menu.prepend(item);
@@ -165,8 +187,29 @@ export async function init() {
       version: VERSION,
     });
     teardown = setup(host);
+    jannyView = createJannyView({
+      ctx: host,
+      getToken: () => getSettings().jannySearchToken,
+    });
+    unregisterJanny = host.ui.registerSourcePanel({
+      id: "janny",
+      label: "JannyAI",
+      root: jannyView.root,
+      onActivate: () => jannyView?.activate(),
+    });
     renderSettingsPanel();
-    addWandButton();
+    addWandButton({
+      id: "janny-wand-button",
+      label: "JannyAI",
+      icon: JANNY_ICON,
+      action: () => host?.openSource?.("janny"),
+    });
+    addWandButton({
+      id: "datacat-wand-button",
+      label: "Datacat",
+      icon: CAT_ICON,
+      action: () => host?.openSource?.("datacat"),
+    });
     console.log("[Datacat] SillyTavern extension ready");
   } catch (error) {
     console.error("[Datacat] Failed to start", error);
@@ -180,14 +223,19 @@ export async function init() {
 export function disable() {
   try {
     host?.dispose?.();
+    unregisterJanny?.();
+    jannyView?.destroy?.();
     teardown?.();
   } catch (error) {
     console.error("[Datacat] Failed to clean up", error);
   }
   teardown = null;
   host = null;
+  jannyView = null;
+  unregisterJanny = null;
   settingsElement?.remove();
   settingsElement = null;
   document.getElementById("datacat-wand-button")?.remove();
+  document.getElementById("janny-wand-button")?.remove();
   document.getElementById("datacat-st-shell")?.remove();
 }

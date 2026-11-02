@@ -12,6 +12,8 @@
   flex-direction: column;
   background: #100c17;
   color: #fff8e8;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 #datacat-st-shell[data-open="true"] {
@@ -259,4 +261,89 @@ body.dc-st-open {
   margin-top: 10px;
   color: var(--SmartThemeEmColor);
   font-size: 0.85em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Source switch                                                      */
+/* ------------------------------------------------------------------ */
+
+#datacat-st-shell .dc-source-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #17101f;
+  border-bottom: 1px solid rgba(246, 200, 76, 0.16);
+  overflow-x: auto;
+}
+
+#datacat-st-shell .dc-source-bar[hidden] {
+  display: none !important;
+}
+
+#datacat-st-shell .dc-source-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#datacat-st-shell .dc-source-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+#datacat-st-shell .dc-source-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(246, 200, 76, 0.22);
+  border-radius: 9px;
+  background: transparent;
+  color: #fff8e8;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#datacat-st-shell .dc-source-close:hover,
+#datacat-st-shell .dc-source-close:focus-visible {
+  background: rgba(246, 200, 76, 0.14);
+  border-color: #f6c84c;
+  outline: none;
+}
+
+#datacat-st-shell .dc-source-tab {
+  flex: 0 0 auto;
+  padding: 6px 16px;
+  border: 1px solid rgba(246, 200, 76, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: #b9adbf;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#datacat-st-shell .dc-source-tab:hover,
+#datacat-st-shell .dc-source-tab:focus-visible {
+  border-color: #f6c84c;
+  color: #fff8e8;
+  outline: none;
+}
+
+#datacat-st-shell .dc-source-tab.active {
+  background: #f6c84c;
+  border-color: #f6c84c;
+  color: #17101f;
+}
+
+#datacat-st-shell .dc-source-panel[hidden] {
+  display: none !important;
+}
+
+#datacat-st-shell .dc-source-bar:not([hidden]) ~ .dc-st-content .dcv1-toolbar-close {
+  display: none !important;
 }

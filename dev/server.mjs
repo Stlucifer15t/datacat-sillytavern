@@ -39,6 +39,9 @@ http
 
     if (pathname === "/") return send(res, 200, path.join(__dirname, "index.html"));
     if (pathname === "/mock-fetch.js") return send(res, 200, path.join(__dirname, "mock-fetch.js"));
+    if (pathname === "/test-janny-card.png") {
+      return send(res, 200, path.join(__dirname, "test-janny-card.png"));
+    }
     if (pathname === "/script.js") return send(res, 200, path.join(__dirname, "script.js"));
     if (pathname === "/scripts/extensions.js") {
       return send(res, 200, path.join(__dirname, "scripts", "extensions.js"));

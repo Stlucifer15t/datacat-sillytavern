@@ -110,7 +110,7 @@ async function imageToPng(blob) {
   }
 }
 
-function toSillyTavernCard(rawCard, datacatCharacterId, importedAt) {
+export function toSillyTavernCard(rawCard, extraExtensions = {}) {
   const raw = rawCard && typeof rawCard === "object" ? rawCard : {};
   const container =
     raw.card && typeof raw.card === "object"
@@ -134,13 +134,15 @@ function toSillyTavernCard(rawCard, datacatCharacterId, importedAt) {
     data.extensions && typeof data.extensions === "object"
       ? { ...inheritedExtensions, ...data.extensions }
       : inheritedExtensions;
-  extensions.datacat = {
-    datacatCharacterId,
-    importedAt,
-    source: "datacat",
-  };
+  for (const [key, value] of Object.entries(extraExtensions || {})) {
+    if (!value || typeof value !== "object") continue;
+    extensions[key] = {
+      ...(extensions[key] && typeof extensions[key] === "object" ? extensions[key] : {}),
+      ...value,
+    };
+  }
   data.extensions = extensions;
-  if (!data.name) data.name = container.name || raw.name || "Datacat character";
+  if (!data.name) data.name = container.name || raw.name || "Character";
   if (!Array.isArray(data.tags)) data.tags = [];
   if (!data.creator) data.creator = container.creator || raw.creator || "";
 
@@ -159,6 +161,8 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
   const characterListCache = { rows: [], loadedAt: 0, promise: null };
   let overlay = null;
   let activeTab = null;
+  const sources = new Map();
+  let activeSource = "";
 
   const context = () => getContext();
 
@@ -424,6 +428,10 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
         </div>
         <button type="button" class="dc-st-close" aria-label="Close Datacat" title="Close Datacat">&#10005;</button>
       </header>
+      <div class="dc-source-bar" data-source-bar hidden>
+        <div class="dc-source-tabs" data-source-tabs role="tablist"></div>
+        <button class="dc-source-close" type="button" data-close-drawer aria-label="Close browser" title="Close">&#10005;</button>
+      </div>
       <div class="dc-st-content"></div>`;
     document.body.append(shell);
     shell.querySelector(".dc-st-close")?.addEventListener("click", () => closeOverlay());
@@ -431,17 +439,86 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
     return shell;
   }
 
+  function setSource(id, { activate = true } = {}) {
+    if (!sources.has(id)) return;
+    activeSource = id;
+    for (const [key, source] of sources) {
+      source.root.hidden = key !== id;
+      const button = overlay?.querySelector(
+        `.dc-source-tab[data-source="${key}"]`,
+      );
+      button?.classList.toggle("active", key === id);
+      button?.setAttribute("aria-selected", String(key === id));
+    }
+    try {
+      localStorage.setItem("datacat:source", id);
+    } catch (_) {}
+    if (activate) {
+      try {
+        sources.get(id).onActivate?.();
+      } catch (error) {
+        console.error("[Datacat] source activate failed", error);
+      }
+    }
+  }
+
+  function registerSource(options = {}) {
+    const id = String(options.id || "").trim();
+    if (!id || !options.root) return () => {};
+    const shell = buildOverlay();
+    const content = shell.querySelector(".dc-st-content");
+    const bar = shell.querySelector("[data-source-bar]");
+    const tabs = shell.querySelector("[data-source-tabs]");
+    const root = options.root;
+    root.classList.add("dc-source-panel");
+    root.dataset.sourcePanel = id;
+    root.hidden = true;
+    content.append(root);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "dc-source-tab";
+    button.dataset.source = id;
+    button.setAttribute("role", "tab");
+    button.textContent = String(options.label || id);
+    button.addEventListener("click", () => setSource(id));
+    tabs.append(button);
+
+    sources.set(id, { id, root, onActivate: options.onActivate });
+    bar.hidden = sources.size < 2;
+
+    const saved = (() => {
+      try {
+        return localStorage.getItem("datacat:source");
+      } catch (_) {
+        return "";
+      }
+    })();
+    if (!activeSource || saved === id) setSource(id, { activate: false });
+
+    return () => {
+      sources.delete(id);
+      root.remove();
+      button.remove();
+      bar.hidden = sources.size < 2;
+      if (activeSource === id) {
+        activeSource = "";
+        const next = sources.keys().next().value;
+        if (next) setSource(next, { activate: false });
+      }
+    };
+  }
+
   function openOverlay() {
     const shell = buildOverlay();
     shell.dataset.open = "true";
     shell.setAttribute("aria-hidden", "false");
     document.body.classList.add("dc-st-open");
-    for (const callback of activeTab?.listeners || []) {
-      try {
-        callback();
-      } catch (error) {
-        console.error("[Datacat] activate listener failed", error);
-      }
+    if (!activeSource) {
+      const first = sources.keys().next().value;
+      if (first) setSource(first);
+    } else {
+      setSource(activeSource);
     }
   }
 
@@ -488,25 +565,36 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
 
   ctx.ui = {
     registerDrawerTab(options = {}) {
-      const shell = buildOverlay();
-      const content = shell.querySelector(".dc-st-content");
       const root = document.createElement("div");
       root.className = "dc-st-tab-root";
-      content.append(root);
+      const listeners = new Set();
+      let unregisterSource = null;
+      const runListeners = () => {
+        for (const callback of listeners) {
+          try {
+            callback();
+          } catch (error) {
+            console.error("[Datacat] activate listener failed", error);
+          }
+        }
+      };
       activeTab = {
         root,
-        listeners: new Set(),
-        activate: openOverlay,
+        listeners,
+        activate() {
+          setSource("datacat");
+          openOverlay();
+        },
         onActivate(callback) {
           if (typeof callback !== "function") return () => {};
-          activeTab.listeners.add(callback);
-          return () => activeTab.listeners.delete(callback);
+          listeners.add(callback);
+          return () => listeners.delete(callback);
         },
         destroy() {
-          activeTab?.listeners.clear();
-          root.remove();
+          listeners.clear();
+          unregisterSource?.();
           activeTab = null;
-          if (overlay && !overlay.querySelector(".dc-st-tab-root")) {
+          if (overlay && !overlay.querySelector(".dc-source-panel")) {
             overlay.remove();
             overlay = null;
             document.body.classList.remove("dc-st-open");
@@ -515,7 +603,17 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
         title: options.title || "Datacat",
       };
       root.dataset.drawer = String(options.id || "datacat");
+      unregisterSource = registerSource({
+        id: "datacat",
+        label: options.title || "Datacat",
+        root,
+        onActivate: runListeners,
+      });
       return activeTab;
+    },
+
+    registerSourcePanel(options = {}) {
+      return registerSource(options);
     },
 
     showModal(options = {}) {
@@ -679,8 +777,20 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
       }
       return "";
     },
-    async import({ card, avatarFile, datacatCharacterId, importedAt }) {
-      const stCard = toSillyTavernCard(card, datacatCharacterId, importedAt);
+    extensionIds(key) {
+      const ids = new Set();
+      for (const row of listContextCharacters()) {
+        const extension =
+          row?.data?.extensions?.[key] || row?.extensions?.[key] || null;
+        const id = String(
+          extension?.id || extension?.characterId || extension?.character_id || "",
+        ).trim();
+        if (id) ids.add(id);
+      }
+      return ids;
+    },
+    async import({ card, avatarFile, extensions }) {
+      const stCard = toSillyTavernCard(card, extensions);
       const json = new Blob([JSON.stringify(stCard)], { type: "application/json" });
       const form = new FormData();
       form.append(
@@ -786,6 +896,11 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
 
   ctx.version = version;
   ctx.open = openOverlay;
+  ctx.openSource = (id) => {
+    if (!sources.has(id)) return;
+    setSource(id);
+    openOverlay();
+  };
   ctx.close = closeOverlay;
   ctx.dispose = () => {
     document.removeEventListener("keydown", onKeyDown);

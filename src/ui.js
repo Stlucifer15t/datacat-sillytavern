@@ -8,9 +8,9 @@
  */
 import { uuidv7 } from "./uuidv7.js";
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const CLIENT_NAME = "SillyTavern";
-const DISPLAY_VERSION = "1.1";
+const DISPLAY_VERSION = "1.2";
 const PAGE_SIZE = 24;
 const CHAT_LOADING_MIN_MS = 750;
 const MAX_MIRRORED_AVATAR_BYTES = 50 * 1024 * 1024;
@@ -5761,8 +5761,13 @@ export function setup(ctx) {
       lumiverseCharacter = await ctx.characters.import({
         card,
         avatarFile,
-        datacatCharacterId: id,
-        importedAt,
+        extensions: {
+          datacat: {
+            datacatCharacterId: id,
+            importedAt,
+            source: "datacat",
+          },
+        },
       });
       if (!lumiverseCharacter?.id) {
         throw new Error("SillyTavern created no usable character record.");
