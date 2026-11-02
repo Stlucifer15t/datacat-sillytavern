@@ -3124,6 +3124,7 @@ export function setup(ctx) {
   let verificationPromise = null;
   let verificationReject = null;
   let activeVerificationPopup = null;
+  let hostedLinkModal = null;
   let verificationGeneration = 0;
   let accountStatePromise = null;
   let accountLoadedAt = 0;
@@ -5431,11 +5432,62 @@ export function setup(ctx) {
     return url.toString();
   }
 
+  /**
+   * Open a hosted Datacat page. Tauri/Android WebViews often route
+   * window.open() to the system browser and return null; fall back to an
+   * anchor click, and let the caller continue polling without a popup handle.
+   */
+  function openHostedPage(url, name, features) {
+    let popup = null;
+    try {
+      popup = window.open(url, name, features);
+    } catch (_) {}
+    if (popup) return popup;
+    try {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.style.display = "none";
+      document.body.append(link);
+      link.click();
+      link.remove();
+    } catch (_) {}
+    return null;
+  }
+
+  function isTauriHost() {
+    return Boolean(globalThis.__TAURI_INTERNALS__ || globalThis.__TAURI__);
+  }
+
+  function closeHostedLink() {
+    hostedLinkModal?.dismiss();
+    hostedLinkModal = null;
+  }
+
+  function showHostedLink(url, title, copy) {
+    closeHostedLink();
+    const modal = showSafeModal({
+      title,
+      width: 520,
+      maxHeight: Math.max(360, window.innerHeight - 32),
+    });
+    modal.root.innerHTML = `
+      <div class="dcv1-chat-picker">
+        <p class="dcv1-chat-picker-count">${escapeHtml(copy)}</p>
+        <a class="dcv1-button" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Open Datacat page</a>
+        <p class="dcv1-chat-picker-count">Keep the app open — this screen closes automatically when Datacat finishes.</p>
+      </div>`;
+    hostedLinkModal = modal;
+    return modal;
+  }
+
   function cancelImportVerification() {
     verificationGeneration += 1;
     window.clearTimeout(verificationPollTimer);
     verificationPollTimer = 0;
     closeVerificationPopup(activeVerificationPopup);
+    closeHostedLink();
     activeVerificationPopup = null;
     const reject = verificationReject;
     verificationReject = null;
@@ -5448,10 +5500,7 @@ export function setup(ctx) {
 
   async function startImportVerification(requestedName, popup = null) {
     const generation = ++verificationGeneration;
-    if (!popup || popup.closed) {
-      throw verificationPopupBlockedError();
-    }
-    activeVerificationPopup = popup;
+    activeVerificationPopup = popup && !popup.closed ? popup : null;
     let startTimer = 0;
     try {
       const payload = await Promise.race([
@@ -5482,14 +5531,23 @@ export function setup(ctx) {
           "Datacat returned an invalid security-check address.",
         );
       }
-      try {
-        if (popup.closed) throw verificationPopupBlockedError();
-        popup.location.replace(verificationUrl);
-        popup.focus();
-      } catch (_) {
-        throw verificationPopupBlockedError();
+      if (popup && !popup.closed) {
+        try {
+          popup.location.replace(verificationUrl);
+          popup.focus();
+          activeVerificationPopup = popup;
+        } catch (_) {
+          popup = null;
+          activeVerificationPopup = null;
+        }
       }
-      activeVerificationPopup = popup;
+      if (!popup || popup.closed) {
+        showHostedLink(
+          verificationUrl,
+          "Complete Datacat verification",
+          `Datacat needs a quick security check before importing ${requestedName}.`,
+        );
+      }
       setStatus("");
       setImportFeedback({
         tone: "verification",
@@ -5575,11 +5633,13 @@ export function setup(ctx) {
       });
       setVerificationLease(lease);
       closeVerificationPopup(activeVerificationPopup);
+      closeHostedLink();
       setStatus("");
       render();
       return lease;
     } catch (error) {
       closeVerificationPopup(activeVerificationPopup);
+      closeHostedLink();
       throw error;
     } finally {
       window.clearTimeout(verificationPollTimer);
@@ -5623,9 +5683,6 @@ export function setup(ctx) {
     } catch (error) {
       if (!error.verificationRequired) throw error;
       setVerificationLease(null);
-      if (!popup || popup.closed) {
-        throw verificationRetryRequiredError();
-      }
       lease = await ensureImportVerification(requestedName, popup);
       return transfer();
     }
@@ -5650,28 +5707,14 @@ export function setup(ctx) {
     const requestedName = summary?.name || "character";
     let lumiverseCharacter = null;
     const existingLease = getVerificationLease();
-    const verificationPopup = existingLease
-      ? null
-      : window.open(
-          verificationPopupWaitingUrl(),
-          "datacat-client-verification",
-          "popup=yes,width=560,height=720",
-        );
-    if (!existingLease && !verificationPopup) {
-      const error = verificationPopupBlockedError();
-      const message = publicErrorMessage(
-        error,
-        "Allow pop-ups for SillyTavern to complete the Datacat security check.",
-      );
-      setStatus(message, true);
-      setImportFeedback({
-        tone: "error",
-        title: `Could not import ${requestedName}`,
-        detail: message,
-        datacatCharacterId: id,
-      });
-      return;
-    }
+    const verificationPopup =
+      existingLease || isTauriHost()
+        ? null
+        : openHostedPage(
+            verificationPopupWaitingUrl(),
+            "datacat-client-verification",
+            "popup=yes,width=560,height=720",
+          );
     state.importId = id;
     setStatus(`Importing ${requestedName}…`);
     setImportFeedback({
@@ -5877,13 +5920,19 @@ export function setup(ctx) {
         anonymousUrl.searchParams.set("anonymous", "1");
         accountLinkUrl = anonymousUrl.href;
       }
-      popup = window.open(
-        accountLinkUrl,
-        "datacat-account-link",
-        "popup=yes,width=560,height=720",
-      );
+      popup = isTauriHost()
+        ? null
+        : openHostedPage(
+            accountLinkUrl,
+            "datacat-account-link",
+            "popup=yes,width=560,height=720",
+          );
       if (!popup) {
-        throw new Error(`Open ${accountLinkUrl} to approve the link.`);
+        showHostedLink(
+          accountLinkUrl,
+          "Connect Datacat account",
+          "Datacat opened in the system browser. Complete the page there to finish connecting your account.",
+        );
       }
       setStatus(
         requireAccount ? "Log in to continue…" : "Connecting…",
@@ -5911,14 +5960,15 @@ export function setup(ctx) {
               state.linkedAccount
                 ? "logged_in"
                 : "linked_anonymous";
-            popup.close();
+            popup?.close();
+            closeHostedLink();
             resolve();
           } catch (error) {
             if (error.code !== "LINK_PENDING") {
               reject(error);
               return;
             }
-            if (popup.closed) {
+            if (popup?.closed) {
               const closed = new Error("Account login cancelled.");
               closed.code = "LINK_WINDOW_CLOSED";
               reject(closed);
@@ -5950,6 +6000,7 @@ export function setup(ctx) {
     } finally {
       window.clearTimeout(linkPollTimer);
       linkPollTimer = 0;
+      closeHostedLink();
       state.accountLinking = false;
       render();
       if (cancelled) updateCatalogStatus();

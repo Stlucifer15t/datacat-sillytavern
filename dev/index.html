@@ -170,10 +170,12 @@
         clientName: "SillyTavern",
         installationId: "",
         accessToken: "",
-        verificationLease: {
-          token: "dcv1v_mock",
-          expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-        },
+        verificationLease: params.get("nolease")
+          ? null
+          : {
+              token: "dcv1v_mock",
+              expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+            },
         pending: {},
       };
 

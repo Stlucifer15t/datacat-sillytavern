@@ -90,6 +90,15 @@ requested route — check the API Access page for the pending scope approval.
 - **Wand menu → Kudos / Comment** works while a Datacat-linked character is
   selected; it opens the Datacat account flow if needed.
 
+### Android / TauriTavern
+
+TauriTavern runs SillyTavern in a Tauri WebView and often sends
+`window.open` targets to the system browser. The extension handles that:
+when importing, it shows a **Complete Datacat verification** panel with the
+real verification link and keeps polling inside the app. Open the link, finish
+the Cloudflare check in the browser, return to TauriTavern, and the import
+continues automatically. Account linking uses the same fallback.
+
 Imported characters carry this metadata inside the card:
 
 ```json
