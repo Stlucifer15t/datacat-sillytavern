@@ -10,9 +10,10 @@ import { createHost } from "./src/host.js";
 import { setup } from "./src/ui.js";
 
 const MODULE = "datacat";
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
+const DEFAULT_CLIENT_ID = "dca_kz-pccgdi04zmvswkuwtzejk";
 const DEFAULTS = {
-  clientId: "datacat_sillytavern",
+  clientId: DEFAULT_CLIENT_ID,
   clientName: "SillyTavern",
   installationId: "",
   accessToken: "",
@@ -71,8 +72,9 @@ function renderSettingsPanel() {
         <label class="dc-settings-label" for="datacat-client-id">Datacat Client ID</label>
         <input id="datacat-client-id" class="text_pole" type="text" autocomplete="off" spellcheck="false">
         <div class="dc-settings-hint">
-          Must be a Client ID approved at
-          <a href="https://datacat.run/creatortools/api-access" target="_blank" rel="noopener noreferrer">datacat.run → Creator Management → API Access</a>.
+          A shared community Client ID is built in. Replace it with your own approved ID from
+          <a href="https://datacat.run/creatortools/api-access" target="_blank" rel="noopener noreferrer">datacat.run → Creator Management → API Access</a>
+          if you want your own rate limits.
         </div>
         <div class="dc-settings-actions">
           <div id="datacat-open" class="menu_button menu_button_icon">

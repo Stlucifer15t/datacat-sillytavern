@@ -8,9 +8,9 @@
  */
 import { uuidv7 } from "./uuidv7.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const CLIENT_NAME = "SillyTavern";
-const DISPLAY_VERSION = "1.0";
+const DISPLAY_VERSION = "1.1";
 const PAGE_SIZE = 24;
 const CHAT_LOADING_MIN_MS = 750;
 const MAX_MIRRORED_AVATAR_BYTES = 50 * 1024 * 1024;
@@ -278,6 +278,9 @@ function publicRequestErrorMessage(
   }
   if (code === "CLIENT_API_SCOPE_REQUIRED") {
     return "This Client ID is missing Datacat scopes (characters:read / characters:import). Approve them in Creator Management → API Access.";
+  }
+  if (code === "VERIFICATION_START_TIMEOUT") {
+    return "Datacat did not start the security check. Close the verification popup and try again.";
   }
   if (Number(status) === 429) return "Datacat is busy. Please try again shortly.";
   if (Number(status) === 404) return "That Datacat item is no longer available.";
@@ -5449,16 +5452,28 @@ export function setup(ctx) {
       throw verificationPopupBlockedError();
     }
     activeVerificationPopup = popup;
+    let startTimer = 0;
     try {
-      const payload = await datacatFetch("/verifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: VERIFICATION_ACTION,
-          clientName: CLIENT_NAME,
-          clientVersion: VERSION,
+      const payload = await Promise.race([
+        datacatFetch("/verifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: VERIFICATION_ACTION,
+            clientName: CLIENT_NAME,
+            clientVersion: VERSION,
+          }),
         }),
-      });
+        new Promise((_, reject) => {
+          startTimer = window.setTimeout(() => {
+            const error = new Error(
+              "Datacat did not start the security check in time.",
+            );
+            error.code = "VERIFICATION_START_TIMEOUT";
+            reject(error);
+          }, 15_000);
+        }),
+      ]).finally(() => window.clearTimeout(startTimer));
       const verificationUrl = normalizeVerificationUrl(
         payload.verificationUriComplete,
       );

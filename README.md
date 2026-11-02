@@ -24,9 +24,10 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 ## Requirements
 
 - SillyTavern 1.13.x or newer.
-- An approved **Datacat Client ID** with catalogue scopes.
 - A browser with `createImageBitmap` or standard canvas image decoding
   (current Chrome, Firefox, Safari and Edge all work).
+- No Datacat account or Client ID is required; a shared Client ID is built in,
+  and you can override it with your own for separate rate limits.
 
 ## Install
 
@@ -35,8 +36,8 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 1. Open SillyTavern → **Extensions** → **Install extension**.
 2. Paste the repository URL of this project.
 3. Enable **Datacat Browser** if it is not enabled automatically.
-4. Open **Extensions settings** and set your Datacat Client ID (see below).
-5. Click **Open Datacat**, or use **Datacat** in the wand menu.
+4. Open **Datacat** from the wand menu. A shared Client ID is built in; set
+   your own in Extensions settings only if you want separate rate limits.
 
 ### Manually
 
@@ -49,20 +50,28 @@ The folder must contain `manifest.json`, `index.js` and `style.css` at its root.
 
 ## Datacat Client ID
 
-Datacat requires each integration to register a Client ID. The extension ships
-with the placeholder `datacat_sillytavern`, which will not work until it has
-been approved for the right scopes.
+The extension ships with a shared, approved Client ID:
 
-1. Open [Datacat → Creator Management → API Access](https://datacat.run/creatortools/api-access).
-2. Create a client for SillyTavern and request the catalogue and import scopes
-   (at minimum `characters:read` and `characters:import`; add the community and
-   account scopes if you want kudos, comments and account linking).
-3. Copy the approved Client ID.
-4. Paste it into **SillyTavern → Extensions → Datacat → Datacat Client ID**.
+```text
+dca_kz-pccgdi04zmvswkuwtzejk
+```
+
+That means users can install the extension and start browsing without
+registering anything. Datacat explicitly treats Client IDs as public
+identifiers (`clientIdsAreSecrets: false`), not account tokens; never put a
+Datacat account token or password in this field.
+
+The tradeoff: everyone who keeps the default shares the same Datacat
+rate-limit bucket. If you expect many users, or want your own quotas, create a
+client at [Datacat → Creator Management → API Access](https://datacat.run/creatortools/api-access),
+request the catalogue and import scopes (at minimum `characters:read` and
+`characters:import`; add community/account scopes for kudos, comments and
+account linking), and paste it into
+**SillyTavern → Extensions → Datacat → Datacat Client ID**.
 
 The value is stored in `extension_settings.datacat` and sent as
-`X-Datacat-Client-Id` on every request. It is not a secret; never put a
-Datacat account token or password in this field.
+`X-Datacat-Client-Id` on every request. Leaving the field empty falls back to
+the shared ID.
 
 If Datacat answers `CLIENT_API_CLIENT_NOT_APPROVED` or
 `CLIENT_API_SCOPE_REQUIRED`, the client exists but is not approved for the

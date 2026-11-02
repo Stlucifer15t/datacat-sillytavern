@@ -17,6 +17,7 @@ import { uuidv7 } from "./uuidv7.js";
 
 const DEFAULT_ORIGIN = "https://datacat.run";
 const API_PREFIX = "/api/client/v1";
+const FALLBACK_CLIENT_ID = "dca_kz-pccgdi04zmvswkuwtzejk";
 const INSTALLATION_ID_PATTERN = /^[A-Za-z0-9._:-]{16,160}$/;
 const PENDING_TTL_MS = 20 * 60_000;
 const REQUEST_TIMEOUT_MS = 45_000;
@@ -119,7 +120,7 @@ export function createDatacatClient({ getSettings, saveSettings, version }) {
 
   function clientId() {
     const value = String(settings().clientId || "").trim();
-    return value || "datacat_sillytavern";
+    return value || FALLBACK_CLIENT_ID;
   }
 
   function clientName() {
