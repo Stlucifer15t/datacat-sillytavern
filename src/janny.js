@@ -610,7 +610,14 @@ export function createJannyView({ ctx, getToken }) {
     } catch (error) {
       lastError = error;
     }
-    if (globalThis.__TAURI_INTERNALS__ || globalThis.__TAURI__) {
+    const host = String(globalThis.location?.hostname || "").toLowerCase();
+    const protocol = String(globalThis.location?.protocol || "").toLowerCase();
+    if (
+      globalThis.__TAURI_INTERNALS__ ||
+      globalThis.__TAURI__ ||
+      protocol === "tauri:" ||
+      host.includes("tauri")
+    ) {
       throw new Error(
         "TauriTavern blocks JannyAI link imports. Use Open page → Download → Import downloaded PNG.",
       );

@@ -5457,7 +5457,14 @@ export function setup(ctx) {
   }
 
   function isTauriHost() {
-    return Boolean(globalThis.__TAURI_INTERNALS__ || globalThis.__TAURI__);
+    const host = String(globalThis.location?.hostname || "").toLowerCase();
+    const protocol = String(globalThis.location?.protocol || "").toLowerCase();
+    return Boolean(
+      globalThis.__TAURI_INTERNALS__ ||
+        globalThis.__TAURI__ ||
+        protocol === "tauri:" ||
+        host.includes("tauri"),
+    );
   }
 
   function closeHostedLink() {
