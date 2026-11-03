@@ -347,3 +347,165 @@ body.dc-st-open {
 #datacat-st-shell .dc-source-bar:not([hidden]) ~ .dc-st-content .dcv1-toolbar-close {
   display: none !important;
 }
+
+/* ------------------------------------------------------------------ */
+/* CharArc panel                                                      */
+/* ------------------------------------------------------------------ */
+
+.ca-root {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  background: #100c17;
+  color: #fff8e8;
+  font: inherit;
+}
+
+.ca-root *, .ca-root *::before, .ca-root *::after { box-sizing: border-box; }
+
+.ca-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #17101f;
+  border-bottom: 1px solid rgba(246, 200, 76, .18);
+}
+
+.ca-brand {
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #f6c84c;
+}
+
+.ca-search {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 8px 11px;
+  border: 1px solid rgba(246, 200, 76, .22);
+  border-radius: 9px;
+  background: #100c17;
+  color: #fff8e8;
+  font: inherit;
+}
+
+.ca-search:focus { outline: none; border-color: #f6c84c; }
+
+.ca-select {
+  padding: 8px 10px;
+  border: 1px solid rgba(246, 200, 76, .22);
+  border-radius: 9px;
+  background: #100c17;
+  color: #fff8e8;
+  font: inherit;
+}
+
+.ca-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b9adbf;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ca-button {
+  padding: 7px 12px;
+  border: 1px solid rgba(246, 200, 76, .25);
+  border-radius: 9px;
+  background: rgba(246, 200, 76, .08);
+  color: #fff8e8;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ca-button:hover, .ca-button:focus-visible { border-color: #f6c84c; outline: none; }
+.ca-button.primary { background: #f6c84c; border-color: #f6c84c; color: #17101f; }
+.ca-button.secondary { opacity: .65; }
+.ca-import-button { flex: 0 0 auto; }
+
+.ca-status {
+  padding: 8px 12px;
+  color: #b9adbf;
+  font-size: 12px;
+}
+
+.ca-status[data-error="true"] { color: #ff9b9b; }
+
+.ca-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 4px 12px 16px;
+}
+
+.ca-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(246, 200, 76, .18);
+  border-radius: 12px;
+  background: #191221;
+}
+
+.ca-cover {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: #0f0b16;
+  cursor: pointer;
+}
+
+.ca-cover img { display: block; width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+
+.ca-card-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+}
+
+.ca-card-title {
+  padding: 0; border: 0; background: transparent; color: #fff8e8;
+  font: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.ca-card-title:hover { color: #f6c84c; }
+
+.ca-meta { color: #b9adbf; font-size: 11px; }
+.ca-description {
+  display: -webkit-box; margin: 0; overflow: hidden; color: #d8cfdf;
+  font-size: 12px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+}
+
+.ca-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ca-tags span {
+  padding: 2px 7px; border-radius: 999px; background: rgba(156, 107, 210, .16);
+  color: #cdb7e3; font-size: 10px;
+}
+
+.ca-card-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 6px; }
+.ca-card-actions .ca-button { flex: 1 1 auto; padding: 6px 8px; text-align: center; }
+
+.ca-more-row { display: flex; justify-content: center; padding: 0 12px 24px; }
+
+.ca-detail { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 14px; }
+.ca-detail-avatar { width: 100%; border-radius: 10px; object-fit: cover; }
+.ca-detail-copy p {
+  margin: 0 0 10px; color: #e6dfea; font-size: 13px; line-height: 1.45; white-space: pre-wrap;
+}
+.ca-hint { color: #b9adbf !important; font-size: 12px !important; }
+
+@media (max-width: 560px) {
+  .ca-detail { grid-template-columns: 1fr; }
+  .ca-detail-avatar { max-width: 180px; }
+  .ca-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}

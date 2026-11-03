@@ -8,10 +8,11 @@ import {
 import { createDatacatClient } from "./src/api.js";
 import { createHost } from "./src/host.js";
 import { createJannyView } from "./src/janny.js";
+import { createCharArcView } from "./src/chararc.js";
 import { setup } from "./src/ui.js";
 
 const MODULE = "datacat";
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const DEFAULT_CLIENT_ID = "dca_kz-pccgdi04zmvswkuwtzejk";
 const DEFAULTS = {
   clientId: DEFAULT_CLIENT_ID,
@@ -36,11 +37,19 @@ const JANNY_ICON = `
     <path d="m12 2.6 2.7 5.7 6.2.8-4.5 4.3 1.2 6.2L12 16.6l-5.6 3 1.2-6.2L3.1 9.1l6.2-.8L12 2.6Z" fill="currentColor"/>
   </svg>`;
 
+const CHARCA_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 2L4 5v14l8-6 8 6V5l-8-6z" fill="currentColor"/>
+    <path d="M12 7l5 5 5-5v3c0 3.31-2.69 6-6 6-3.31 0-6-2.69-6-6V7z" fill="currentColor"/>
+  </svg>`;
+
 let host = null;
 let teardown = null;
 let settingsElement = null;
 let jannyView = null;
+let chararcView = null;
 let unregisterJanny = null;
+let unregisterCharArc = null;
 
 function getSettings() {
   const store = extension_settings[MODULE];
@@ -197,6 +206,15 @@ export async function init() {
       root: jannyView.root,
       onActivate: () => jannyView?.activate(),
     });
+    chararcView = createCharArcView({
+      ctx: host,
+    });
+    unregisterCharArc = host.ui.registerSourcePanel({
+      id: "chararc",
+      label: "CharArc",
+      root: chararcView.root,
+      onActivate: () => chararcView?.activate(),
+    });
     renderSettingsPanel();
     addWandButton({
       id: "janny-wand-button",
@@ -209,6 +227,12 @@ export async function init() {
       label: "Datacat",
       icon: CAT_ICON,
       action: () => host?.openSource?.("datacat"),
+    });
+    addWandButton({
+      id: "chararc-wand-button",
+      label: "CharArc",
+      icon: CHARCA_ICON,
+      action: () => host?.openSource?.("chararc"),
     });
     console.log("[Datacat] SillyTavern extension ready");
   } catch (error) {
@@ -225,6 +249,8 @@ export function disable() {
     host?.dispose?.();
     unregisterJanny?.();
     jannyView?.destroy?.();
+    unregisterCharArc?.();
+    chararcView?.destroy?.();
     teardown?.();
   } catch (error) {
     console.error("[Datacat] Failed to clean up", error);
@@ -232,10 +258,13 @@ export function disable() {
   teardown = null;
   host = null;
   jannyView = null;
+  chararcView = null;
   unregisterJanny = null;
+  unregisterCharArc = null;
   settingsElement?.remove();
   settingsElement = null;
   document.getElementById("datacat-wand-button")?.remove();
   document.getElementById("janny-wand-button")?.remove();
+  document.getElementById("chararc-wand-button")?.remove();
   document.getElementById("datacat-st-shell")?.remove();
 }

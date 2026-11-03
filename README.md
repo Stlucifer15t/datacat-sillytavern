@@ -1,9 +1,9 @@
 # Datacat & JannyAI Browser for SillyTavern
 
-Bring the [Datacat](https://datacat.run) and [JannyAI](https://jannyai.com)
-character catalogues into SillyTavern. Browse fresh discoveries, search the full
-Datacat catalogue, explore JannyAI's public index, import a character, and open
-a chat without leaving the app.
+Bring the [Datacat](https://datacat.run), [JannyAI](https://jannyai.com) and
+[CharArc](https://chararc.bernkastel.pictures) character catalogues into
+SillyTavern. Browse fresh discoveries, search full catalogues, explore tags and
+creators, import a character, and open a chat without leaving the app.
 
 This is a port of the
 [Datacat Browser for Lumiverse](https://github.com/datacat-run/datacat-lumiverse)
@@ -21,9 +21,11 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 - Datacat account linking (anonymous or logged-in) and community actions
   (kudos, comments) from the wand menu while chatting.
 - Hosted Datacat security check for protected card and image transfers.
-- **Source switch** between Datacat and JannyAI in the same browser overlay.
+- **Source switch** between Datacat, JannyAI and CharArc in the same browser overlay.
 - JannyAI search, tags, sorting and detail cards, with an “Open on JannyAI”
   shortcut and PNG-card import.
+- CharArc search, tags, sorting, source filtering and detail cards, with
+  “Open on CharArc” and PNG-card import.
 
 ## Requirements
 
@@ -40,9 +42,9 @@ Repository: <https://github.com/Stlucifer15t/datacat-sillytavern>
 1. Open SillyTavern → **Extensions** → **Install extension**.
 2. Paste the repository URL of this project.
 3. Enable **Datacat & JannyAI** if it is not enabled automatically.
-4. Open **Datacat** or **JannyAI** from the wand menu. A shared Datacat
-   Client ID is built in; set your own in Extensions settings only if you want
-   separate rate limits.
+4. Open **Datacat**, **JannyAI** or **CharArc** from the wand menu. A shared
+   Datacat Client ID is built in; set your own in Extensions settings only if you
+   want separate rate limits.
 
 ### Manually
 
@@ -122,6 +124,21 @@ JannyAI is an independent mirror of JanitorAI content. Respect the original
 creators and JannyAI's terms; the extension only searches its public index and
 opens normal JannyAI pages for downloads.
 
+### CharArc source
+
+CharArc
+(https://chararc.bernkastel.pictures) is an archive of AI character cards
+scraped from chub.ai, booru, nyaime, risuai, webring, char-tavern and generic
+sources. It exposes a public API, so browsing works reliably:
+
+- **Browse/search** uses CharArc's public search API: name, description, tags,
+  token counts, sorting and avatars.
+- **Import** first asks SillyTavern to fetch the card link through its
+  server-side import route. If that fails, fall back to manual PNG hand-off:
+  **Open page** → CharArc **Download** → **Import downloaded PNG**.
+- Characters carry `extensions.chararc` metadata (`id`, `name`, `pageUrl`,
+  `importedAt`, `source`).
+
 ### Android / TauriTavern
 
 TauriTavern runs SillyTavern in a Tauri WebView and often sends
@@ -157,7 +174,8 @@ Imported characters carry this metadata inside the card:
 The "Added" badges and the Imports tab are built by scanning your SillyTavern
 character library for that metadata; nothing is written to Datacat when you
 scan. JannyAI imports use `extensions.jannyai` (`id`, `name`, `pageUrl`,
-`importedAt`, `source`).
+`importedAt`, `source`). CharArc imports use `extensions.chararc`
+(`id`, `name`, `pageUrl`, `importedAt`, `source`).
 
 ## Privacy and storage
 
@@ -182,6 +200,7 @@ port replaces that host with two browser modules:
 | `src/api.js`  | Allowlisted Datacat Client API calls, client headers, token/lease exchanges |
 | `src/host.js` | SillyTavern adapter: full-screen drawer, modals, toasts, character reads     |
 | `src/janny.js`| JannyAI search panel and PNG-card import                                    |
+| `src/chararc.js`| CharArc search panel and PNG-card import                                   |
 | `src/ui.js`   | The catalogue UI, ported from the Lumiverse extension with minimal changes   |
 
 Only these call sites differ from the original:
