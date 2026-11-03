@@ -510,8 +510,9 @@ export function createJannyView({ ctx, getToken }) {
             <button class="dj-button" type="button" data-modal-open="${escapeHtml(String(hit.id))}">Open on JannyAI</button>
             <button class="dj-button primary" type="button" data-modal-auto="${escapeHtml(String(hit.id))}">Import via SillyTavern</button>
             <button class="dj-button" type="button" data-modal-import="${escapeHtml(String(hit.id))}">Import downloaded PNG</button>
+            <button class="dj-button" type="button" data-modal-copy="${escapeHtml(String(hit.id))}">Copy link</button>
           </div>
-          <p class="dj-hint">“Import via SillyTavern” asks the app to fetch the card link. If the app blocks JannyAI downloads, open the page, tap Download, then use “Import downloaded PNG”.</p>
+          <p class="dj-hint">“Import via SillyTavern” asks the app to fetch the card link. If the app blocks JannyAI downloads, use “Copy link” and paste it into SillyTavern’s Import from URL, or download the PNG and use “Import downloaded PNG”.</p>
         </div>
       </div>`;
     modal.root.querySelector("[data-modal-open]")?.addEventListener("click", () => {
@@ -524,6 +525,14 @@ export function createJannyView({ ctx, getToken }) {
     modal.root.querySelector("[data-modal-import]")?.addEventListener("click", () => {
       modal.dismiss();
       chooseFile(hit);
+    });
+    modal.root.querySelector("[data-modal-copy]")?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pageUrl(hit));
+        toast("success", "Link copied. Paste it into SillyTavern's Import from URL.", "JannyAI");
+      } catch (_) {
+        openExternal(pageUrl(hit));
+      }
     });
   }
 

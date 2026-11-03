@@ -111,7 +111,8 @@ Cloudflare, so the integration is split in two:
   whitelist, or Cloudflare on a hosted server), the extension falls back to a
   manual PNG hand-off: **Open page** → JannyAI **Download** → **Import
   downloaded PNG**. The PNG reader extracts the V2 card and imports it the same
-  way.
+  way. The detail dialog also has **Copy link** for SillyTavern's own
+  **Import from URL** box.
 
 The extension does not proxy or scrape JannyAI pages. If the public search key
 rotates, update the extension or paste a new key under
