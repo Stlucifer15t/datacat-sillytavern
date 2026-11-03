@@ -460,7 +460,11 @@ export function createJannyView({ ctx, getToken }) {
       state.page += 1;
       state.error = "";
     } catch (error) {
-      state.error = error?.message || "Could not search JannyAI.";
+      const message = String(error?.message || "");
+      state.error =
+        /failed to fetch|network|load failed/i.test(message)
+          ? "Could not reach JannyAI search. Check the connection or the app's network permissions."
+          : message || "Could not search JannyAI.";
     } finally {
       state.loading = false;
       render();
@@ -545,8 +549,8 @@ export function createJannyView({ ctx, getToken }) {
       saveImported(state.imported);
     }
     toast("success", `${character?.name || name} imported`, "JannyAI");
-    setStatus(`Imported ${character?.name || name}.`);
     render();
+    setStatus(`Imported ${character?.name || name}.`);
   }
 
   root.addEventListener("click", (event) => {
@@ -619,7 +623,6 @@ export function createJannyView({ ctx, getToken }) {
       const message = error?.message || "Could not import that PNG.";
       toast("error", message, "JannyAI import failed");
       setStatus(message, true);
-      render();
     });
   });
 
