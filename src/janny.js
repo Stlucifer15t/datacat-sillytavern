@@ -379,7 +379,7 @@ export function createJannyView({ ctx, getToken }) {
               <p class="dj-description">${escapeHtml(description || "No description.")}</p>
               <div class="dj-tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
               <div class="dj-card-actions">
-                <button class="dj-button" type="button" data-open="${escapeHtml(id)}">Open</button>
+                <button class="dj-button" type="button" data-open="${escapeHtml(id)}">Open page</button>
                 <button class="dj-button ${imported ? "secondary" : "primary"}" type="button" data-import="${escapeHtml(id)}" title="Download the card PNG on JannyAI, then choose it here">${imported ? "Imported" : "Import PNG"}</button>
               </div>
             </div>
