@@ -8,9 +8,9 @@
  */
 import { uuidv7 } from "./uuidv7.js";
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const CLIENT_NAME = "SillyTavern";
-const DISPLAY_VERSION = "1.2";
+const DISPLAY_VERSION = "1.3";
 const PAGE_SIZE = 24;
 const CHAT_LOADING_MIN_MS = 750;
 const MAX_MIRRORED_AVATAR_BYTES = 50 * 1024 * 1024;

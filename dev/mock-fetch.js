@@ -128,6 +128,26 @@
       return new Response("OK", { status: 200 });
     }
 
+    if (url.startsWith("/api/content/importURL") || url.startsWith("/api/content/importUUID")) {
+      let payload = {};
+      try {
+        payload = JSON.parse(String(init.body || "{}"));
+      } catch (_) {}
+      const value = String(payload.url || "");
+      if (
+        value.includes("jannyai.com") ||
+        value.includes("janitorai.com") ||
+        value.includes("_character")
+      ) {
+        const pngResponse = await originalFetch("/test-janny-card.png");
+        return new Response(await pngResponse.blob(), {
+          status: 200,
+          headers: { "Content-Type": "image/png" },
+        });
+      }
+      return new Response("Not found", { status: 404 });
+    }
+
     if (url.startsWith("/characters/")) {
       const name = decodeURIComponent(url.slice("/characters/".length));
       const avatars = readAvatars();

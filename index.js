@@ -11,7 +11,7 @@ import { createJannyView } from "./src/janny.js";
 import { setup } from "./src/ui.js";
 
 const MODULE = "datacat";
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const DEFAULT_CLIENT_ID = "dca_kz-pccgdi04zmvswkuwtzejk";
 const DEFAULTS = {
   clientId: DEFAULT_CLIENT_ID,

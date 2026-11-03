@@ -308,7 +308,7 @@ export function createJannyView({ ctx, getToken }) {
       <button class="dj-button dj-import-button" type="button" data-import-file>Import PNG</button>
     </header>
     <div class="dj-tag-row" data-tags></div>
-    <div class="dj-howto">Import: <b>Open</b> a card on JannyAI → <b>Download</b> → <b>Import PNG</b> here.</div>
+    <div class="dj-howto">Import: click <b>Import</b>. If the app blocks JannyAI downloads, use <b>Open page</b> → <b>Download</b> → <b>Import downloaded PNG</b>.</div>
     <div class="dj-status" data-status>Search JannyAI or pick a tag.</div>
     <div class="dj-grid" data-grid></div>
     <div class="dj-more-row">
@@ -381,12 +381,19 @@ export function createJannyView({ ctx, getToken }) {
               <div class="dj-tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
               <div class="dj-card-actions">
                 <button class="dj-button" type="button" data-open="${escapeHtml(id)}">Open page</button>
-                <button class="dj-button ${imported ? "secondary" : "primary"}" type="button" data-import="${escapeHtml(id)}" title="Download the card PNG on JannyAI, then choose it here">${imported ? "Imported" : "Import PNG"}</button>
+                <button class="dj-button ${imported ? "secondary" : "primary"}" type="button" data-import="${escapeHtml(id)}" title="Import this character into SillyTavern">${imported ? "Imported" : "Import"}</button>
               </div>
             </div>
           </article>`;
       })
       .join("");
+    for (const button of grid.querySelectorAll("[data-import]")) {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const hit = findHit(button.getAttribute("data-import"));
+        if (hit) void importFromLinkWithFeedback(hit);
+      });
+    }
     moreButton.hidden = state.hits.length >= state.total || state.total === 0;
     if (state.loading) setStatus("Loading…");
     else if (state.error) setStatus(state.error, true);
@@ -501,13 +508,18 @@ export function createJannyView({ ctx, getToken }) {
           <div class="dj-tags">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
           <div class="dj-card-actions">
             <button class="dj-button" type="button" data-modal-open="${escapeHtml(String(hit.id))}">Open on JannyAI</button>
-            <button class="dj-button primary" type="button" data-modal-import="${escapeHtml(String(hit.id))}">Import downloaded PNG</button>
+            <button class="dj-button primary" type="button" data-modal-auto="${escapeHtml(String(hit.id))}">Import via SillyTavern</button>
+            <button class="dj-button" type="button" data-modal-import="${escapeHtml(String(hit.id))}">Import downloaded PNG</button>
           </div>
-          <p class="dj-hint">On JannyAI, tap Download, then return here and choose the PNG. Only the downloaded card PNG contains the character definition.</p>
+          <p class="dj-hint">“Import via SillyTavern” asks the app to fetch the card link. If the app blocks JannyAI downloads, open the page, tap Download, then use “Import downloaded PNG”.</p>
         </div>
       </div>`;
     modal.root.querySelector("[data-modal-open]")?.addEventListener("click", () => {
       openExternal(pageUrl(hit));
+    });
+    modal.root.querySelector("[data-modal-auto]")?.addEventListener("click", () => {
+      modal.dismiss();
+      void importFromLinkWithFeedback(hit);
     });
     modal.root.querySelector("[data-modal-import]")?.addEventListener("click", () => {
       modal.dismiss();
@@ -522,14 +534,13 @@ export function createJannyView({ ctx, getToken }) {
     fileInput.click();
   }
 
-  async function importFile(file) {
-    if (!file) return;
-    const hit =
-      pendingImport || findHit(fileInput.dataset.hitId || "") || null;
+  async function importCardBlob(blob, hit, fallbackName = "character") {
     setStatus("Reading character card…");
-    const card = await readCardFromPng(file);
+    const card = await readCardFromPng(blob);
     const id = String(hit?.id || "").trim();
-    const name = String(card?.data?.name || card?.name || file.name.replace(/\.png$/i, ""));
+    const name = String(
+      card?.data?.name || card?.name || fallbackName || "character",
+    );
     const extensions = {};
     if (id) {
       extensions.jannyai = {
@@ -540,9 +551,15 @@ export function createJannyView({ ctx, getToken }) {
         source: "jannyai",
       };
     }
+    const avatarFile =
+      blob instanceof File
+        ? blob
+        : new File([blob], `${name.replace(/[^\w.-]+/g, "_").slice(0, 60) || "character"}.png`, {
+            type: "image/png",
+          });
     const character = await ctx.characters.import({
       card,
-      avatarFile: file,
+      avatarFile,
       extensions,
     });
     if (id) {
@@ -552,6 +569,66 @@ export function createJannyView({ ctx, getToken }) {
     toast("success", `${character?.name || name} imported`, "JannyAI");
     render();
     setStatus(`Imported ${character?.name || name}.`);
+    return character;
+  }
+
+  async function importFile(file) {
+    if (!file) return;
+    const hit =
+      pendingImport || findHit(fileInput.dataset.hitId || "") || null;
+    return importCardBlob(file, hit, file.name.replace(/\.png$/i, ""));
+  }
+
+  async function importFromLink(hit) {
+    const id = String(hit?.id || "").trim();
+    if (!id) throw new Error("This character has no JannyAI id.");
+    const candidates = [
+      pageUrl(hit),
+      `https://janitorai.com/characters/${id}`,
+    ];
+    let lastError = null;
+    for (const url of candidates) {
+      try {
+        const blob = await ctx.characters.downloadFromLink(url);
+        return await importCardBlob(blob, hit);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    try {
+      const blob = await ctx.characters.downloadFromUuid(`${id}_character`);
+      return await importCardBlob(blob, hit);
+    } catch (error) {
+      lastError = error;
+    }
+    throw lastError || new Error("SillyTavern could not import this JannyAI card.");
+  }
+
+  async function importFromLinkWithFeedback(hit) {
+    const id = String(hit?.id || "").trim();
+    if (!id || state.imported[id]) return;
+    const button = root.querySelector(`[data-import="${id}"]`);
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Importing…";
+    }
+    try {
+      await importFromLink(hit);
+    } catch (error) {
+      const message = String(error?.message || "Automatic import failed.");
+      toast(
+        "error",
+        `${message} Use Open page → Download → Import PNG instead.`,
+        "JannyAI import failed",
+      );
+      setStatus(`${message} Use Open page → Download → Import PNG.`, true);
+      openDetail(id);
+    } finally {
+      if (button?.isConnected) {
+        button.disabled = false;
+        button.textContent = state.imported[id] ? "Imported" : "Import";
+      }
+    }
   }
 
   root.addEventListener("click", (event) => {
@@ -579,7 +656,6 @@ export function createJannyView({ ctx, getToken }) {
     }
     const importButton = target.closest("[data-import]");
     if (importButton) {
-      chooseFile(findHit(importButton.getAttribute("data-import")));
       return;
     }
     if (target.closest("[data-import-file]")) {

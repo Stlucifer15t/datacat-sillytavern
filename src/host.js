@@ -110,6 +110,25 @@ async function imageToPng(blob) {
   }
 }
 
+async function readPngResponse(response, label) {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      detail = String(await response.text() || "").slice(0, 160);
+    } catch (_) {}
+    throw new Error(
+      `${label} failed (${response.status})${detail ? `: ${detail}` : "."}`,
+    );
+  }
+  const type = String(response.headers.get("content-type") || "").toLowerCase();
+  if (!type.includes("image/png") && !type.includes("application/octet-stream")) {
+    throw new Error(`${label} did not return a PNG card.`);
+  }
+  const blob = await response.blob();
+  if (!blob.size) throw new Error(`${label} returned an empty file.`);
+  return blob;
+}
+
 export function toSillyTavernCard(rawCard, extraExtensions = {}) {
   const raw = rawCard && typeof rawCard === "object" ? rawCard : {};
   const container =
@@ -788,6 +807,24 @@ export function createHost({ client, getContext, getRequestHeaders, selectCharac
         if (id) ids.add(id);
       }
       return ids;
+    },
+    async downloadFromLink(url) {
+      const response = await fetch("/api/content/importURL", {
+        method: "POST",
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ url: String(url || "") }),
+        cache: "no-store",
+      });
+      return readPngResponse(response, "SillyTavern link import");
+    },
+    async downloadFromUuid(value) {
+      const response = await fetch("/api/content/importUUID", {
+        method: "POST",
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ url: String(value || "") }),
+        cache: "no-store",
+      });
+      return readPngResponse(response, "SillyTavern UUID import");
     },
     async import({ card, avatarFile, extensions }) {
       const stCard = toSillyTavernCard(card, extensions);

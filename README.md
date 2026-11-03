@@ -102,10 +102,16 @@ Cloudflare, so the integration is split in two:
 
 - **Browse/search** uses JannyAI's public Meilisearch index: name, description,
   tags, token counts, NSFW filter, sorting and avatars.
-- **Import** is a manual PNG hand-off: click **Open** on a card, use JannyAI's
-  Download button, then click **Import PNG** in the extension and choose the
-  downloaded card. The extension reads the V2 card embedded in the PNG and
-  imports it through SillyTavern, attaching `extensions.jannyai` metadata.
+- **Import** first asks SillyTavern to fetch the card link through its
+  server-side import route. The extension tries the JannyAI page URL and a
+  JanitorAI-shaped URL (which SillyTavern uses for its JannyAI downloader). If
+  the server returns a PNG, the card is imported with `extensions.jannyai`
+  metadata.
+- If the host blocks JannyAI downloads (for example TauriTavern's URL
+  whitelist, or Cloudflare on a hosted server), the extension falls back to a
+  manual PNG hand-off: **Open page** → JannyAI **Download** → **Import
+  downloaded PNG**. The PNG reader extracts the V2 card and imports it the same
+  way.
 
 The extension does not proxy or scrape JannyAI pages. If the public search key
 rotates, update the extension or paste a new key under
