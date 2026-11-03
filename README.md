@@ -131,6 +131,13 @@ real verification link and keeps polling inside the app. Open the link, finish
 the Cloudflare check in the browser, return to TauriTavern, and the import
 continues automatically. Account linking uses the same fallback.
 
+TauriTavern currently returns **501** for SillyTavern's `/api/content/importUUID`
+and only accepts a fixed host whitelist in `/api/content/importURL`, so JannyAI
+link imports cannot be resolved by the app itself. On TauriTavern use the
+JannyAI **Open page → Download → Import downloaded PNG** path. Standard
+SillyTavern (desktop, Termux, or a web build) can use the automatic link
+import.
+
 Imported characters carry this metadata inside the card:
 
 ```json

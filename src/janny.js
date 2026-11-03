@@ -610,6 +610,11 @@ export function createJannyView({ ctx, getToken }) {
     } catch (error) {
       lastError = error;
     }
+    if (globalThis.__TAURI_INTERNALS__ || globalThis.__TAURI__) {
+      throw new Error(
+        "TauriTavern blocks JannyAI link imports. Use Open page → Download → Import downloaded PNG.",
+      );
+    }
     throw lastError || new Error("SillyTavern could not import this JannyAI card.");
   }
 
