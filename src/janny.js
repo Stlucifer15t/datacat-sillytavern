@@ -283,7 +283,7 @@ export function createJannyView({ ctx, getToken }) {
   const searchToken = () => String(getToken?.() || "").trim() || SEARCH_TOKEN;
   const state = {
     query: "",
-    sort: "relevance",
+    sort: "newest",
     showNsfw: true,
     tags: new Set(),
     page: 1,
@@ -319,6 +319,7 @@ export function createJannyView({ ctx, getToken }) {
 
   const searchInput = root.querySelector("[data-search]");
   const sortSelect = root.querySelector("[data-sort]");
+  sortSelect.value = state.sort;
   const nsfwInput = root.querySelector("[data-nsfw]");
   const tagRow = root.querySelector("[data-tags]");
   const status = root.querySelector("[data-status]");
